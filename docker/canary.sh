@@ -19,13 +19,13 @@ if [ -f /.dockerenv ]; then
 fi
 
 # check if something is running on port 80
-if ss -tulnp | grep ':80 ' >/dev/null; then
+if ss -tulnp | grep ':880 ' >/dev/null; then
     echo "Error: something is already running on port 80" >&2
     exit 1
 fi
 
 # check if something is running on port 443
-if ss -tulnp | grep ':443 ' >/dev/null; then
+if ss -tulnp | grep ':8443 ' >/dev/null; then
     echo "Error: something is already running on port 443" >&2
     exit 1
 fi
@@ -59,7 +59,7 @@ mkdir -p /etc/dokploy
 
 chmod -R 777 /etc/dokploy
 
-docker pull dokploy/dokploy:canary
+docker pull eben92/dokploy:canary
 
 # Installation
 docker service create \
@@ -72,7 +72,7 @@ docker service create \
   --update-parallelism 1 \
   --update-order stop-first \
   -e RELEASE_TAG=canary \
-  dokploy/dokploy:canary
+  eben92/dokploy:canary
 
 
 public_ip=$(hostname -I | awk '{print $1}')
