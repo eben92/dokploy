@@ -6,63 +6,85 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export interface Schema {
-	serverIp: string;
-	projectName: string;
+  serverIp: string;
+  projectName: string;
 }
 
 export interface Template {
-	envs: string[];
-	mounts?: {
-		mountPath: string;
-		content?: string;
-	}[];
+  envs: string[];
+  mounts?: {
+    mountPath: string;
+    content?: string;
+  }[];
 }
 
 export const generateRandomDomain = ({
-	serverIp,
-	projectName,
+  serverIp,
+  projectName,
 }: Schema): string => {
-	const hash = randomBytes(3).toString("hex");
-	const slugIp = serverIp.replaceAll(".", "-");
-	return `${projectName}-${hash}-${slugIp}.traefik.me`;
+  const hash = randomBytes(3).toString("hex");
+  const slugIp = serverIp.replaceAll(".", "-");
+  return `${projectName}-${hash}-${slugIp}.traefik.me`;
+};
+
+/**
+ * Generates a local or random production domain with the appropriate protocol.
+ * If the environment is set to "development", it returns a local domain with a specified port or defaults to :80.
+ * Otherwise, it generates a random domain using the provided server IP and project name.
+ * @param {string} options.serverIp - The server IP address.
+ * @param {string} options.projectName - The project name.
+ * @param {number} options.port ?? 80 - The port number (optional).
+ * @returns {string} The generated domain.
+ */
+export const generateLocalOrRandomProductionDomainWithProtocol = ({
+  serverIp,
+  projectName,
+  port = 80,
+}: Schema & { port?: number }): string => {
+  if (process.env.NODE_ENV === "development") {
+    return `http://localhost:${port}`;
+  }
+
+  const domain = generateRandomDomain({ serverIp, projectName });
+  return `https://${domain}`;
 };
 
 export const generateHash = (projectName: string, quantity = 3): string => {
-	const hash = randomBytes(quantity).toString("hex");
-	return `${projectName}-${hash}`;
+  const hash = randomBytes(quantity).toString("hex");
+  return `${projectName}-${hash}`;
 };
 
 export const generatePassword = (quantity = 16): string => {
-	return randomBytes(Math.ceil(quantity / 2))
-		.toString("hex")
-		.slice(0, quantity);
+  return randomBytes(Math.ceil(quantity / 2))
+    .toString("hex")
+    .slice(0, quantity);
 };
 
 export const generateBase64 = (bytes = 32): string => {
-	return randomBytes(bytes).toString("base64");
+  return randomBytes(bytes).toString("base64");
 };
 
 export const loadTemplateModule = async (
-	id: TemplatesKeys,
+  id: TemplatesKeys
 ): Promise<(schema: Schema) => Template> => {
-	const templateLoader = templates.find((t) => t.id === id);
-	if (!templateLoader) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
-			message: `Template ${id} not found or not implemented yet`,
-		});
-	}
+  const templateLoader = templates.find((t) => t.id === id);
+  if (!templateLoader) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Template ${id} not found or not implemented yet`,
+    });
+  }
 
-	const generate = await templateLoader.load();
-	return generate;
+  const generate = await templateLoader.load();
+  return generate;
 };
 
 export const readComposeFile = async (id: string) => {
-	const cwd = process.cwd();
-	const composeFile = await readFile(
-		join(cwd, ".next", "templates", id, "docker-compose.yml"),
-		"utf8",
-	);
+  const cwd = process.cwd();
+  const composeFile = await readFile(
+    join(cwd, ".next", "templates", id, "docker-compose.yml"),
+    "utf8"
+  );
 
-	return composeFile;
+  return composeFile;
 };
