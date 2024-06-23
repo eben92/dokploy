@@ -4,7 +4,7 @@ services:
     command: server /data --console-address ":9001"
     restart: unless-stopped
     ports:
-      - "9000:9000" # changing this container/host port often times cause authentications/server api to fail
+      - "9000:9000" # changing this container/host port often times cause api requests to fail (status >= 400)
       - "9001:9001"
     networks:
       - dokploy-network
