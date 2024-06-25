@@ -2,13 +2,13 @@ name: Pull request
 on:
   pull_request:
     branches:
-      - main 
-      - canary
+      - dev/main
+      - dev/canary
 
   push:
     branches:
-      - main
-      - canary
+      - dev/main
+      - dev/canary
 jobs:
   build-app:
     if: github.event_name == 'pull_request'
@@ -17,21 +17,21 @@ jobs:
       matrix:
         node-version: [18.18.0]
     steps:
-    - uses: actions/checkout@v3
-    - uses: pnpm/action-setup@v3
-      with:
-        version: 8
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'pnpm'
-    - name: Install dependencies
-      run: pnpm install
-    - name: Run Build
-      run: pnpm build
-    - name: Run Tests
-      run: pnpm run test
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run Build
+        run: pnpm build
+      - name: Run Tests
+        run: pnpm run test
 
   build-and-push-docker-on-push:
     if: github.event_name == 'push'
@@ -56,4 +56,4 @@ jobs:
       - name: Build and push Docker image using custom script
         run: |
           chmod +x ./docker/push.sh
-          ./docker/push.sh ${{ github.ref_name == 'canary' && 'canary' || '' }}
+          ./docker/push.sh ${{ github.ref_name == 'dev/canary' && 'canary' || '' }}
