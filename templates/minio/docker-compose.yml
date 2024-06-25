@@ -1,0 +1,40 @@
+services:
+  minio:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - dokploy-network
+    environment:
+      #  - MINIO_SERVER_URL=${MINIO_SERVER_URL_HOST} # this should begin with http:// or https://
+      #  - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL_HOST} # this should begin with http:// or https://
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${SERVER_HASH}.entrypoints=websecure
+      - traefik.http.routers.${SERVER_HASH}.rule=Host(`${MINIO_SERVER_URL_HOST}`) && PathPrefix(`/`)
+      - traefik.http.routers.${SERVER_HASH}.service=${SERVER_HASH}
+      - traefik.http.services.${SERVER_HASH}.loadbalancer.server.port=9000
+
+      - traefik.http.routers.${CONSOLE_HASH}.entrypoints=websecure
+      - traefik.http.routers.${CONSOLE_HASH}.rule=Host(`${MINIO_BROWSER_REDIRECT_URL_HOST}`) && PathPrefix(`/`)
+      - traefik.http.routers.${CONSOLE_HASH}.service=${CONSOLE_HASH}
+      - traefik.http.services.${CONSOLE_HASH}.loadbalancer.server.port=9001
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  minio-data:
